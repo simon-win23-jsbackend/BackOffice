@@ -1,0 +1,85 @@
+﻿@page "/newsletter"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using System.Text.Json
+
+@rendermode InteractiveServer
+
+<PageTitle>Subscribed Users</PageTitle>
+
+<h1>Subscriptions to our newsletter</h1>
+
+@if (emails == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (emails.Count == 0)
+{
+    <p><em>No subscribed users found.</em></p>
+}
+else
+{
+    <ul>
+        @foreach (var email in emails)
+        {
+            <li>@email</li>
+            <button @onclick="async () => await DeleteUserSubscription(email)">Delete</button>
+        }
+       
+    </ul>
+        
+}
+
+@code {
+    private List<string> emails;
+
+    public class SubscriptionRequest
+    {
+        public string Email { get; set; }
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSubscribedEmails();
+    }
+
+    private async Task LoadSubscribedEmails()
+    {
+        try
+        {
+            var response = await Http.GetAsync("http://localhost:7014/api/newsletter/subscribers");
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            emails = JsonSerializer.Deserialize<List<string>>(content)!;
+        }
+        catch (HttpRequestException ex)
+        {
+
+            Console.WriteLine($"Error fetching subscribed emails: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    private async Task DeleteUserSubscription(string email)
+    {
+        try
+        {
+            var subscriptionRequest = new SubscriptionRequest { Email = email };
+            var response = await Http.PostAsJsonAsync("http://localhost:7014/api/newsletter/unsubscribe", subscriptionRequest);
+            if (response.IsSuccessStatusCode)
+            {
+                emails.Remove(email);
+                StateHasChanged();
+                Console.WriteLine($"User {email} has been deleted!");
+            }
+        }
+        catch { }
+
+
+    }
+
+}

@@ -1,0 +1,48 @@
+﻿@page "/users"
+@rendermode InteractiveServer
+@inject HttpClient Http
+
+
+
+<PageTitle>Users</PageTitle>
+
+<h1>Users</h1>
+
+
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+
+    @foreach (var user in users)
+    {
+        <div class="mb-3"> @user.Id @user.FirstName @user.LastName </div>
+        <a href="/user/edit/@user.Id">Edit User </a>
+
+    }
+
+}
+
+@code {
+    public ApplicationUser[]? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await Http.GetFromJsonAsync<ApplicationUser[]>("http://localhost:7227/api/GetUsers");
+
+
+    }
+    public class ApplicationUser
+    {
+        public string Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email{ get; set; }
+        public string PhoneNumber { get; set; }
+
+        
+    }
+}
